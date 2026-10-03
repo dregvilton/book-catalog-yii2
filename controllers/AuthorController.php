@@ -58,7 +58,7 @@ class AuthorController extends Controller
     public function actionIndex(): string
     {
         return $this->render('index', [
-            'authors' => $this->module->get(AuthorRepository::class)->all(),
+            'provider' => $this->module->get(AuthorRepository::class)->page(),
         ]);
     }
 

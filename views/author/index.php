@@ -2,9 +2,10 @@
 
 use app\models\Author;
 use yii\helpers\Html;
+use yii\widgets\LinkPager;
 
 /** @var yii\web\View $this */
-/** @var Author[] $authors */
+/** @var yii\data\ActiveDataProvider $provider */
 
 $this->title = Yii::t('app', 'Авторы');
 ?>
@@ -24,7 +25,7 @@ $this->title = Yii::t('app', 'Авторы');
     </tr>
     </thead>
     <tbody>
-    <?php foreach ($authors as $author): ?>
+    <?php foreach ($provider->getModels() as $author): ?>
         <tr>
             <td><?= Html::encode($author->full_name) ?></td>
             <td><?= Html::a(Yii::t('app', 'Открыть'), ['view', 'id' => $author->id]) ?></td>
@@ -32,3 +33,4 @@ $this->title = Yii::t('app', 'Авторы');
     <?php endforeach; ?>
     </tbody>
 </table>
+<?= LinkPager::widget(['pagination' => $provider->getPagination()]) ?>

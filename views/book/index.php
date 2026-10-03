@@ -2,9 +2,10 @@
 
 use app\models\Book;
 use yii\helpers\Html;
+use yii\widgets\LinkPager;
 
 /** @var yii\web\View $this */
-/** @var Book[] $books */
+/** @var yii\data\ActiveDataProvider $provider */
 
 $this->title = Yii::t('app', 'Книги');
 ?>
@@ -27,7 +28,7 @@ $this->title = Yii::t('app', 'Книги');
     </tr>
     </thead>
     <tbody>
-    <?php foreach ($books as $book): ?>
+    <?php foreach ($provider->getModels() as $book): ?>
         <tr>
             <td><?= Html::encode($book->title) ?></td>
             <td><?= (int) $book->release_year ?></td>
@@ -38,3 +39,4 @@ $this->title = Yii::t('app', 'Книги');
     <?php endforeach; ?>
     </tbody>
 </table>
+<?= LinkPager::widget(['pagination' => $provider->getPagination()]) ?>

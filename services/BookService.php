@@ -36,7 +36,11 @@ class BookService
         $book = $this->save($form);
 
         if ($book !== null) {
-            $this->notifier->notifyAboutNewBook($book);
+            try {
+                $this->notifier->notifyAboutNewBook($book);
+            } catch (\Throwable $exception) {
+                Yii::warning('Не удалось уведомить подписчиков книги ' . $book->id, __METHOD__);
+            }
         }
 
         return $book;
@@ -54,6 +58,19 @@ class BookService
         return $this->save($form);
     }
 
+    public function delete(Book $book): bool
+    {
+        $coverUrl = $book->cover_url;
+
+        if ($book->delete() === false) {
+            return false;
+        }
+
+        $this->deleteCoverSafely($coverUrl);
+
+        return true;
+    }
+
     /**
      * Сохраняет книгу, обложку и связи с авторами.
      *
@@ -64,13 +81,17 @@ class BookService
     private function save(BookForm $form): ?Book
     {
         $book = $form->getBook();
+        $oldCoverUrl = $book->cover_url;
+        $newCoverUrl = null;
+        $committed = false;
         $transaction = Yii::$app->db->beginTransaction();
 
         try {
             $book->setAttributes($form->bookAttributes());
 
             if ($form->coverFile !== null) {
-                $book->cover_url = $this->storage->upload($form->coverFile, 'covers');
+                $newCoverUrl = $this->storage->upload($form->coverFile, 'covers');
+                $book->cover_url = $newCoverUrl;
             }
 
             if (!$book->save()) {
@@ -82,6 +103,11 @@ class BookService
 
             $this->syncAuthors($book, $form->normalizedAuthorIds());
             $transaction->commit();
+            $committed = true;
+
+            if ($newCoverUrl !== null && $oldCoverUrl !== null) {
+                $this->deleteCoverSafely($oldCoverUrl);
+            }
 
             return $book;
         } catch (\Throwable $exception) {
@@ -90,6 +116,23 @@ class BookService
             }
 
             throw $exception;
+        } finally {
+            if (!$committed && $newCoverUrl !== null) {
+                $this->deleteCoverSafely($newCoverUrl);
+            }
+        }
+    }
+
+    private function deleteCoverSafely(?string $url): void
+    {
+        if ($url === null || $url === '') {
+            return;
+        }
+
+        try {
+            $this->storage->delete($url);
+        } catch (\Throwable $exception) {
+            Yii::warning('Не удалось очистить обложку в хранилище.', __METHOD__);
         }
     }
 

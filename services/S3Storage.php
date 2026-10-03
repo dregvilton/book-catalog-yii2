@@ -41,6 +41,40 @@ class S3Storage
         return $this->publicUrl($key);
     }
 
+    /** Удаляет только объект из нашего bucket; чужие URL не затрагивает. */
+    public function delete(string $publicUrl): void
+    {
+        $prefix = rtrim((string) $this->config['publicEndpoint'], '/')
+            . '/' . rawurlencode((string) $this->config['bucket']) . '/';
+
+        if (!str_starts_with($publicUrl, $prefix)) {
+            return;
+        }
+
+        $key = rawurldecode(substr($publicUrl, strlen($prefix)));
+
+        if ($key === '' || str_contains($key, '..') || str_starts_with($key, '/')) {
+            return;
+        }
+
+        $bucket = (string) $this->config['bucket'];
+        $url = rtrim((string) $this->config['endpoint'], '/') . '/'
+            . rawurlencode($bucket) . '/' . str_replace('%2F', '/', rawurlencode($key));
+        $headers = $this->signedHeaders('DELETE', $bucket, $key, '', 'application/octet-stream');
+        $context = stream_context_create(['http' => [
+            'method' => 'DELETE',
+            'header' => $this->formatHeaders($headers),
+            'ignore_errors' => true,
+            'timeout' => 15,
+        ]]);
+        $result = file_get_contents($url, false, $context);
+        $status = (int) preg_replace('/^HTTP\/\S+\s+(\d+).*$/', '$1', $http_response_header[0] ?? '');
+
+        if ($result === false || !in_array($status, [200, 204, 404], true)) {
+            throw new RuntimeException(\Yii::t('app', 'Не удалось удалить обложку из хранилища.'));
+        }
+    }
+
     /**
      * Отправляет объект в bucket.
      *

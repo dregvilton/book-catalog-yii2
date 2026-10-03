@@ -7,6 +7,7 @@ namespace app\repositories;
 use app\exceptions\EntityNotFoundException;
 use app\models\Book;
 use Yii;
+use yii\data\ActiveDataProvider;
 
 /**
  * Репозиторий чтения и поиска книг.
@@ -16,14 +17,14 @@ class BookRepository
     /**
      * Возвращает книги для списка.
      *
-     * @return list<Book>
+     * @return ActiveDataProvider
      */
-    public function all(): array
+    public function page(): ActiveDataProvider
     {
-        return Book::find()
-            ->with('authors')
-            ->orderBy(['created_at' => SORT_DESC])
-            ->all();
+        return new ActiveDataProvider([
+            'query' => Book::find()->with('authors')->orderBy(['created_at' => SORT_DESC, 'id' => SORT_DESC]),
+            'pagination' => ['pageSize' => 20],
+        ]);
     }
 
     /**

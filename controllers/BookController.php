@@ -59,7 +59,7 @@ class BookController extends Controller
     public function actionIndex(): string
     {
         return $this->render('index', [
-            'books' => $this->module->get(BookRepository::class)->all(),
+            'provider' => $this->module->get(BookRepository::class)->page(),
         ]);
     }
 
@@ -167,7 +167,7 @@ class BookController extends Controller
                 fn (): Book => $this->module->get(BookRepository::class)->get($id)
             );
 
-            if ($book->delete() === false) {
+            if (!$this->module->get(BookService::class)->delete($book)) {
                 throw new ServerErrorHttpException(Yii::t('app', 'Не удалось удалить книгу.'));
             }
         } catch (NotFoundHttpException|ServerErrorHttpException $exception) {

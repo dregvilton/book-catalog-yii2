@@ -7,6 +7,7 @@ namespace app\repositories;
 use app\exceptions\EntityNotFoundException;
 use app\models\Author;
 use Yii;
+use yii\data\ActiveDataProvider;
 
 /**
  * Репозиторий чтения и поиска авторов.
@@ -16,13 +17,14 @@ class AuthorRepository
     /**
      * Возвращает всех авторов по алфавиту.
      *
-     * @return list<Author>
+     * @return ActiveDataProvider
      */
-    public function all(): array
+    public function page(): ActiveDataProvider
     {
-        return Author::find()
-            ->orderBy(['full_name' => SORT_ASC])
-            ->all();
+        return new ActiveDataProvider([
+            'query' => Author::find()->orderBy(['full_name' => SORT_ASC, 'id' => SORT_ASC]),
+            'pagination' => ['pageSize' => 20],
+        ]);
     }
 
     /**
