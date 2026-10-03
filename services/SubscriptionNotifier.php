@@ -44,7 +44,7 @@ class SubscriptionNotifier
             try {
                 $this->smsPilot->send($phone, $this->message($book));
             } catch (\Throwable $exception) {
-                Yii::warning($exception->getMessage(), __METHOD__);
+                Yii::warning('Не удалось отправить SMS для книги ' . $book->id, __METHOD__);
             }
         }
     }
